@@ -1,0 +1,50 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: KRaftController
+metadata:
+  name: kraftcontroller
+  namespace: confluent
+spec:
+  replicas: 1
+  dataVolumeCapacity: 2Gi
+  image:
+    application: docker.io/confluentinc/cp-server:7.6.6
+    init: confluentinc/confluent-init-container:2.8.5
+
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: Kafka
+metadata:
+  name: kafka
+  namespace: confluent
+spec:
+  replicas: 3
+  dataVolumeCapacity: 2Gi
+  metricReporter:
+    enabled: true
+  image:
+    application: confluentinc/cp-server:7.6.6
+    init: confluentinc/confluent-init-container:2.8.5
+  dependencies:
+    kRaftController:
+      clusterRef:
+        name: kraftcontroller
+  metrics:
+    prometheus:
+       blacklist:
+         # example to disable all brokertopic metrics
+         - "kafka.server:type=BrokerTopicMetrics,name=*"
+         - "kafka.server:type=BrokerTopicMetrics,name=*,topic=*"
+       rules:
+         - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+           name: kafka_server_$1_$2
+           type: GAUGE
+           cache: true
+           labels:
+             clientId: "$3"
+             broker: "$4:$5"
+         - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Count
+           name: kafka_server_$1_$2
+           cache: true
+           labels:
+             clientId: "$3"
+             broker: "$4::$5"
