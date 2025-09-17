@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: sb-kafka-share-consumer
+  kafka:
+    properties:
+      share.acknowledgement.mode: explicit
+      security:
+        protocol: SASL_PLAINTEXT
+      sasl:
+        mechanism: PLAIN
+  ## JAAS config for client
+        jaas:
+          config: org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="yp4EmHwWcU8jvSVrh3qZnz";
+    bootstrap-servers: localhost:17301,localhost:17302,localhost:17303,localhost:17304
+    consumer:
+      group-id: my-group/shared
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+
