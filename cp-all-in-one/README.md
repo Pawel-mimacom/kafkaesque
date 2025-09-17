@@ -1,10 +1,26 @@
-![image](../images/confluent-logo-300-2.png)
-  
-# Documentation
+1. docker-compose exec -it broker /bin/bash
 
-Refer to the [Quick Start for Confluent Platform](https://docs.confluent.io/platform/current/get-started/platform-quickstart.html) for steps to run this example.
+2. kafka-topics.sh \
+    --bootstrap-server localhost:9092 \
+    --create \
+    --topic test-topic \
+    --partitions 10 
 
-## Flink
+3. intellij:  sb-kafka-share-consumer
 
-The Flink Job Manager is available at [http://localhost:9081](http://localhost:9081)  
-Launch the Flink SQL CLI by executing `docker exec -it flink-sql-client sql-client.sh` from the command line.
+4. /opt/kafka/bin/kafka-producer-perf-test.sh --topic test-topic \
+    --num-records 5000 \
+    --print-metrics \
+    --record-size 50 \
+    --throughput 5 \
+    --producer-props acks=all bootstrap.servers=localhost:9092 batch.size=1
+
+
+https://github.com/khiemdoan/kafka-kraft-cluster-docker-compose/blob/main/README.md 
+
+/opt/kafka/bin/kafka-features.sh --bootstrap-server localhost:9092 upgrade --feature share.version=1
+
+spring.kafka.properties.share.acknowledgement.mode: explicit
+in grafana (http://localhost:3000) define prometheus source connection (http://prometheus:9090)
+
+
