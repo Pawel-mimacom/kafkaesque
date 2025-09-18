@@ -1,0 +1,43 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: KRaftController
+metadata:
+  name: kraftcontroller
+  namespace: confluent
+spec:
+  replicas: 1
+  dataVolumeCapacity: 10Gi
+  image:
+    application: confluentinc/cp-server:7.6.1
+    init: confluentinc/confluent-init-container:2.8.0
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: Kafka
+metadata:
+  name: kafka
+  namespace: confluent
+spec:
+  replicas: 3
+  dataVolumeCapacity: 10Gi
+  metricReporter:
+    enabled: true
+  image:
+    application: confluentinc/cp-server:7.6.1
+    init: confluentinc/confluent-init-container:2.8.0
+  dependencies:
+    kRaftController:
+      clusterRef:
+        name: kraftcontroller
+---
+
+# https://docs.confluent.io/operator/current/co-manage-rest-api.html#
+
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaRestClass
+metadata:
+  name: default
+  namespace: confluent
+spec:
+  kafkaClusterRef:
+    name: kafka
+    namespace: confluent
+

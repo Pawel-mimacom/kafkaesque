@@ -1,0 +1,17 @@
+# kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+namespace: staging
+patches:
+  - path: increase-kafka-replicas.yaml
+configMapGenerator:
+  - name: confluent-config
+    envs:
+      - env.properties
+patches:
+  - path: increase-kafka-replicas.yaml
+replacements:
+  - path: confluent-image-replacement.yaml
+  - path: confluent-init-image-replacement.yaml

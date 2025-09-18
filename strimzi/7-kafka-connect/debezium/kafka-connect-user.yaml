@@ -1,0 +1,43 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: kafka-connect-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+      # access to topics with 'connect-cluster-' prefix
+      - resource:
+          type: topic
+          name: connect-cluster-
+          patternType: prefix
+        operations:
+          - Create
+          - Describe
+          - Read
+          - Write
+        host: "*"
+      # access to topics with 'postgresql.' prefix
+      - resource:
+          type: topic
+          name: postgresql.
+          patternType: prefix
+        operations:
+          - Create
+          - Describe
+          - Read
+          - Write
+        host: "*"
+      # consumer group
+      - resource:
+          type: group
+          name: connect-cluster
+          patternType: literal
+        operations:
+          - Read
+        host: "*"
+

@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  labels:
+    release: prometheus
+    monitoring: confluent
+  name: kafka-pod-monitor
+spec:
+  jobLabel: platform.confluent.io/type
+  podMetricsEndpoints:
+    - port: prometheus
+      interval: 60s
+      scheme: http
+      scrapeTimeout: 30s
+  selector:
+    matchLabels:
+      type: kafka

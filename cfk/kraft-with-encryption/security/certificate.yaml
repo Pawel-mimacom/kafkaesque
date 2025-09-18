@@ -1,0 +1,91 @@
+# note, if you change the namespace you need to change the dnsNames as well, could not figure out yet how to parameterise this
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca-kafka-cert
+  namespace: confluent
+spec:
+  commonName: kafka
+  dnsNames:
+  - kafka
+  - kafka.confluent
+  - kafka.confluent.svc.cluster.local
+  - '*.confluent.svc.cluster.local'
+  - '*.kafka.confluent.svc.cluster.local'
+  issuerRef:
+    kind: Issuer
+    name: ca-issuer
+  secretName: kafka-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca-controller-cert
+  namespace: confluent
+spec:
+  commonName: controller
+  dnsNames:
+    - controller
+    - controller.confluent
+    - controller.confluent.svc.cluster.local
+    - '*.confluent.svc.cluster.local'
+    - '*.controller.confluent.svc.cluster.local'
+  issuerRef:
+    kind: Issuer
+    name: ca-issuer
+  secretName: controller-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca-schemaregistry-cert
+  namespace: confluent
+spec:
+  commonName: schemaregistry
+  dnsNames:
+    - schemaregistry
+    - schemaregistry.confluent
+    - schemaregistry.confluent.svc.cluster.local
+    - '*.confluent.svc.cluster.local'
+    - '*.schemaregistry.confluent.svc.cluster.local'
+  issuerRef:
+    kind: Issuer
+    name: ca-issuer
+  secretName: schemaregistry-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca-connect-cert
+  namespace: confluent
+spec:
+  commonName: connect
+  dnsNames:
+    - connect
+    - connect.confluent
+    - connect.confluent.svc.cluster.local
+    - '*.confluent.svc.cluster.local'
+    - '*.connect.confluent.svc.cluster.local'
+  issuerRef:
+    kind: Issuer
+    name: ca-issuer
+  secretName: connect-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca-c3-cert
+  namespace: confluent
+spec:
+  commonName: controlcenter
+  dnsNames:
+    - controlcenter
+    - controlcenter.confluent
+    - controlcenter.confluent.svc.cluster.local
+    - '*.confluent.svc.cluster.local'
+    - '*.controlcenter.confluent.svc.cluster.local'
+  issuerRef:
+    kind: Issuer
+    name: ca-issuer
+  secretName: controlcenter-tls
