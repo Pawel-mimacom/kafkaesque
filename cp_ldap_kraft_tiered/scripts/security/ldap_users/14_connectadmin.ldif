@@ -1,0 +1,15 @@
+dn: cn=connectAdmin,ou=users,{{ LDAP_BASE_DN }}
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: connectAdmin
+sn: Smith
+givenName: ConnectAdmin
+cn: connectAdmin
+displayName: ConnectAdmin Smith
+uidNumber: 10014
+gidNumber: 5000
+userPassword: connectAdmin
+gecos: connectAdmin
+loginShell: /bin/bash
+homeDirectory: /home/connectAdmin

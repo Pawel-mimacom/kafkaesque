@@ -1,0 +1,177 @@
+---
+version: '3'
+services:
+
+  minio:
+    image: docker.io/bitnami/minio:2024
+    container_name: minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: &minio__root_user admin
+      MINIO_ROOT_PASSWORD: &minio_root_password admin_pass
+      MINIO_DEFAULT_BUCKETS: &minio_default_bucket minio-bucket
+      MINIO_REGION: &minio_region "us-west-1"
+      MINIO_REGION_NAME: *minio_region
+
+  broker:
+    image: confluentinc/cp-server:7.5.0
+    hostname: broker
+    container_name: broker
+    volumes:
+      - './client.properties:/tmp/client.properties'
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    depends_on:
+      - minio
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXTHOST:SASL_PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:29092,PLAINTEXTHOST://localhost:9092'
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'broker:29092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://broker:29092,CONTROLLER://broker:29093,PLAINTEXTHOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid" 
+      # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      
+            # Configure MDS to talk to AD/LDAP
+      KAFKA_LDAP_JAVA_NAMING_FACTORY_INITIAL: com.sun.jndi.ldap.LdapCtxFactory
+      KAFKA_LDAP_COM_SUN_JNDI_LDAP_READ_TIMEOUT: 3000
+      KAFKA_LDAP_JAVA_NAMING_PROVIDER_URL: ldap://openldap:389
+      # Authenticate to LDAP
+      KAFKA_LDAP_JAVA_NAMING_SECURITY_PRINCIPAL: cn=admin,dc=mimacomdemo,dc=com
+      KAFKA_LDAP_JAVA_NAMING_SECURITY_CREDENTIALS: admin
+      KAFKA_LDAP_JAVA_NAMING_SECURITY_AUTHENTICATION: simple
+      # Locate LDAP users and groups
+      KAFKA_LDAP_SEARCH_MODE: GROUPS
+      KAFKA_LDAP_GROUP_SEARCH_BASE: ou=groups,dc=mimacomdemo,dc=com
+      KAFKA_LDAP_GROUP_NAME_ATTRIBUTE: cn
+      KAFKA_LDAP_GROUP_MEMBER_ATTRIBUTE: memberUid
+      KAFKA_LDAP_GROUP_OBJECT_CLASS: posixGroup
+      # KAFKA_LDAP_GROUP_MEMBER_ATTRIBUTE_PATTERN: cn=(.*),ou=users,dc=mimacomdemo,dc=com
+      KAFKA_LDAP_USER_SEARCH_BASE: ou=users,dc=mimacomdemo,dc=com
+      KAFKA_LDAP_USER_NAME_ATTRIBUTE: uid
+      KAFKA_LDAP_USER_OBJECT_CLASS: inetOrgPerson
+      
+      KAFKA_SUPER_USERS: User:admin
+      
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+
+      KAFKA_LISTENER_NAME_PLAINTEXTHOST_SASL_ENABLED_MECHANISMS: PLAIN
+      
+      KAFKA_LISTENER_NAME_PLAINTEXTHOST_PLAIN_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required;
+
+      KAFKA_LISTENER_NAME_PLAINTEXTHOST_PLAIN_SASL_SERVER_CALLBACK_HANDLER_CLASS: io.confluent.security.auth.provider.ldap.LdapAuthenticateCallbackHandler
+      
+      KAFKA_CONFLUENT_LINK_METADATA_TOPIC_REPLICAS: 1
+      KAFKA_CONFLUENT_METADATA_REPLICATION_FATOR: 1
+      KAFKA_confluent_cluster_link_metadata_topic_min_isr: 1
+      KAFKA_confluent_cluster_link_metadata_topic_partitions: 6
+      KAFKA_confluent_cluster_telemetry_metrics_topic_replication_factor: 1
+      KAFKA_confluent_cluster_link_metadata_topic_replication_factor: 1
+      KAFKA_CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1  
+      KAFKA_REPLICATION_FACTOR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_confluent_durability_topic_replication_factor: 1
+      KAFKA_quotas_topic_replication_factor: 1
+      KAFKA_confluent_balancer_topic_replication_factor: 1
+      
+      KAFKA_CONFLUENT_TIER_FEATURE: "true"
+      KAFKA_CONFLUENT_TIER_ENABLE: "true"
+      KAFKA_CONFLUENT_TIER_BACKEND: S3
+      KAFKA_CONFLUENT_TIER_S3_BUCKET: *minio_default_bucket
+      KAFKA_CONFLUENT_TIER_S3_REGION: *minio_region
+      KAFKA_CONFLUENT_TIER_S3_AWS_ENDPOINT_OVERRIDE: http://minio:9000
+      KAFKA_CONFLUENT_TIER_S3_SSE_ALGORITHM: "none"
+      AWS_ACCESS_KEY_ID: *minio__root_user
+      AWS_SECRET_ACCESS_KEY: *minio_root_password
+      KAFKA_CONFLUENT_TIER_LOCAL_HOTSET_MS: 60000 # hotset of 1 minute
+      KAFKA_CONFLUENT_TIER_TOPIC_DELETE_CHECK_INTERVAL: 300000 # check every 5 min for topic deletion
+      KAFKA_CONFLUENT_TIER_METADATA_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_TIER_S3_FORCE_PATH_STYLE_ACCESS: "true"
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.0
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - broker
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:7.5.0
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "9022:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:29092'
+      CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: 'connect:8083'
+      CONTROL_CENTER_CONNECT_HEALTHCHECK_ENDPOINT: '/connectors'
+      CONTROL_CENTER_KSQL_KSQLDB1_URL: "http://ksqldb-server:8088"
+      CONTROL_CENTER_KSQL_KSQLDB1_ADVERTISED_URL: "http://localhost:8088"
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
+
+ 
+  tools:
+    image: cnfldemos/tools:0.3
+    hostname: tools
+    container_name: tools
+    entrypoint: /bin/bash
+    tty: true
+    
+    
+  openldap:
+    image: osixia/openldap:1.3.0
+    hostname: openldap
+    container_name: openldap
+    environment:
+        LDAP_ORGANISATION: "mimacomDemo"
+        LDAP_DOMAIN: "mimacomdemo.com"
+        LDAP_BASE_DN: "dc=mimacomdemo,dc=com"
+#        LDAP_ADMIN_USERNAME: admin
+#        LDAP_ADMIN_PASSWORD: admin
+    volumes:
+        - ./scripts/security/ldap_users:/container/service/slapd/assets/config/bootstrap/ldif/custom
+    command: "--copy-service --loglevel debug"
+
+      
+  phpldapadmin:
+    image: osixia/phpldapadmin:latest
+    container_name: phpldapadmin
+    hostname: phpldapadmin
+    ports: 
+      - "8010:80"
+    environment: 
+      - PHPLDAPADMIN_LDAP_HOSTS=openldap
+      - PHPLDAPADMIN_HTTPS=false
+    depends_on:
+      - openldap

@@ -1,0 +1,27 @@
+mc alias set local http://127.0.0.1:9000 admin admin_pass
+ mc admin info local
+ mc admin info -json local | jq ".info.region"
+ 
+mc encrypt clear local/minio-bucket
+ 
+ http://localhost:9001/ admin/admin_pass
+ 
+  kafka-topics \
+    --bootstrap-server localhost:9092 \
+    --create \
+    --topic test-topic \
+    --partitions 1 \
+    --command-config /tmp/client.properties
+    
+    
+    
+kafka-producer-perf-test --topic test-topic \
+    --producer.config /tmp/client.properties \
+    --num-records 5000000 \
+    --print-metrics \
+    --record-size 5000 \
+    --throughput -1 \
+    --producer-props acks=all bootstrap.servers=localhost:9092 batch.size=8196
+    
+kafka-console-consumer --topic test-topic     --consumer.config /tmp/client.properties   --bootstrap-server localhost:9092 --from-beginning
+        
