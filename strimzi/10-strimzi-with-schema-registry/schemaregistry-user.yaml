@@ -3,7 +3,7 @@ kind: KafkaUser
 metadata:
   name: schemaregistry
   labels:
-    strimzi.io/cluster: my-cluster
+    strimzi.io/cluster: mycluster
 spec:
   authentication:
     type: scram-sha-512
